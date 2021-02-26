@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ball.dao.InsertDataDao">
+    <!--parameterType 参数类型  resultType 返回值类型-->
+
+    <!--条件查询-->
+    <select id="findPage" parameterType="String" resultType="com.ball.pojo.ZhangBin">
+        SELECT
+        t.*
+        FROM
+        ZB t
+        WHERE
+        1 = 1
+        <if test="queryParam != null and queryParam != '' and queryParam.length > 0 ">
+            AND t.date = #{queryParam}
+        </if>
+        ORDER BY
+        t.date DESC
+    </select>
+
+    <!--添加-->
+    <insert id="add" parameterType="com.ball.pojo.ZhangBin">
+       INSERT INTO ZB(date,bs,yt,mp,tcrc,textarea,id) VALUES(#{date},#{bs},#{yt},#{mp},#{tcrc},#{textarea},#{id})
+    </insert>
+
+    <!--编辑页回显-->
+    <select id="showEdit" parameterType="String" resultType="com.ball.pojo.ZhangBin">
+        SELECT t.* FROM ZB t WHERE t.id = #{id}
+    </select>
+    <!--编辑-->
+    <update id="edit" parameterType="com.ball.pojo.ZhangBin">
+        UPDATE ZB t
+        <set>
+            <if test="date != null and date != '' and date.length > 0 ">
+                date = #{date},
+            </if>
+            <if test="bs != null and bs != '' and bs.length > 0 ">
+                bs = #{bs},
+            </if>
+            <if test="yt != null and yt != '' and yt.length > 0 ">
+                yt = #{yt},
+            </if>
+            <if test="mp != null and mp != '' and mp.length > 0 ">
+                mp = #{mp},
+            </if>
+            <if test="tcrc != null and tcrc != '' and tcrc.length > 0 ">
+                tcrc = #{tcrc},
+            </if>
+            <if test="textarea != null and textarea != '' and textarea.length > 0 ">
+                textarea = #{textarea}
+            </if>
+        </set>
+        WHERE t.id = #{id}
+    </update>
+    <!--删除-->
+    <delete id="delete" parameterType="String">
+        DELETE FROM ZB  WHERE id = #{id}
+    </delete>
+</mapper>

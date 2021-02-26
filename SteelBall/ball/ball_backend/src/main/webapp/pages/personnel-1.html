@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>账目管理系统</title>
+    <meta name="description" content="账目管理系统">
+    <meta name="keywords" content="账目管理系统">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+
+</head>
+
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>账目管理<small>张斌</small></h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>账目管理</el-breadcrumb-item>
+            <el-breadcrumb-item>张斌</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <!--pagination.queryString-->
+                <el-date-picker
+                        text="日期"
+                        v-model="pagination.queryString"
+                        type="date"
+                        placeholder="选择日期"
+                        format="yyyy 年 MM 月 dd 日"
+                        value-format="yyyy-MM-dd">
+                </el-date-picker>
+                <el-button @click="add()" class="butT">添加</el-button>
+                <el-button type="primary" class="butT" @click="query()">查询</el-button>
+            </div>
+            <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                <el-table-column type="index" align="center" label="序号"></el-table-column>
+                <el-table-column prop="id" label="ID" v-if="show" align="center"></el-table-column>
+                <el-table-column prop="date" label="日期" align="center"></el-table-column>
+                <el-table-column prop="bs" label="拔丝（kg）" align="center"></el-table-column>
+                <el-table-column prop="mp" label="毛坯（kg）" align="center"></el-table-column>
+                <el-table-column prop="yt" label="余条" align="center"></el-table-column>
+                <el-table-column prop="tcrc" label="加工费" align="center"></el-table-column>
+                <el-table-column prop="textarea" label="备注" show-overflow-tooltip align="center"></el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div class="pagination-container">
+                <el-pagination
+                        class="pagiantion"
+                        @current-change="handleCurrentChange"
+                        :current-page="pagination.currentPage"
+                        :page-size="pagination.pageSize"
+                        layout="total, prev, pager, next, jumper"
+                        :total="pagination.total">
+                </el-pagination>
+            </div>
+            <!-- 新增标签弹层 -->
+            <div class="add-form">
+                <el-dialog customClass="customWidth" title="新增" :visible.sync="flagAdd">
+                    <el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right"
+                             label-width="100px">
+
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="日期:">
+                                    <el-date-picker
+                                            text="日期"
+                                            v-model="formData.date"
+                                            type="date"
+                                            placeholder="选择日期"
+                                            format="yyyy 年 MM 月 dd 日"
+                                            value-format="yyyy-MM-dd">
+                                    </el-date-picker>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="毛坯:">
+                                    <el-input placeholder="单位:Kg" v-model="formData.mp"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="余条:">
+                                    <el-input placeholder="单位:Kg" v-model="formData.yt"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <!--prop="bsVali"-->
+                                <el-form-item label="拔丝:">
+                                    <el-input placeholder="单位:Kg" v-model="formData.bs"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="加工费:">
+                                    <el-input v-model="formData.tcrc"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="备注:">
+                                    <el-input v-model="formData.textarea" type="textarea"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="flagAdd = false">取消</el-button>
+                        <el-button type="primary" @click="submitAdd()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+
+            <!-- 编辑标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="编辑检查项" :visible.sync="flagEdit">
+                    <el-form ref="dataEditForm" :model="formData" :rules="rules" label-position="right"
+                             label-width="100px">
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="日期:">
+                                    <el-date-picker
+                                            text="日期"
+                                            v-model="formData.date"
+                                            type="date"
+                                            placeholder="选择日期"
+                                            format="yyyy 年 MM 月 dd 日"
+                                            value-format="yyyy-MM-dd">
+                                    </el-date-picker>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="毛坯:">
+                                    <el-input placeholder="单位:Kg" v-model="formData.mp"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="余条:">
+                                    <el-input placeholder="单位:Kg" v-model="formData.yt"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <!--prop="bsVali"-->
+                                <el-form-item label="拔丝:">
+                                    <el-input placeholder="单位:Kg" v-model="formData.bs"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="加工费:">
+                                    <el-input v-model="formData.tcrc"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24">
+                                <el-form-item label="备注:">
+                                    <el-input v-model="formData.textarea" type="textarea"></el-input>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="flagEdit = false">取消</el-button>
+                        <el-button type="primary" @click="handleEdit()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<!-- 引入组件库 -->
+<script src="../js/vue.js"></script>
+<script src="../plugins/elementui/index.js"></script>
+<script type="text/javascript" src="../js/jquery.min.js"></script>
+<script src="../js/axios-0.18.0.js"></script>
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            show: false,
+            pagination: {//分页相关模型数据
+                currentPage: 1,//当前页码
+                pageSize: 10,//每页显示的记录数
+                total: 0,//总记录数
+                queryString: null//查询条件
+            },
+            dataList: [],//当前页要展示的分页列表数据
+            formData: {},//表单数据
+            flagAdd: false,//增加表单是否可见
+            flagEdit: false,//编辑表单是否可见
+            rules: {//校验规则
+                dateVali: [{required: true, message: '日期为必填项', trigger: 'blur'}],
+                bsVali: [{required: true, message: '拔丝(kg)必填项', trigger: 'blur'}]
+            }
+        },
+
+        //钩子函数，VUE对象初始化完成后自动执行
+        created() {
+            this.findPage();
+        },
+        methods: {
+            //分页查询pagination
+            findPage() {
+                let pageData = {
+                    currentPage: this.pagination.currentPage,
+                    pageSize: this.pagination.pageSize,
+                    queryString: this.pagination.queryString
+                }
+                axios.post("/personnel-1/findPage.do", pageData).then(res => {
+                    // 为dataList赋值,双向绑定赋值
+                    vue.dataList = res.data.rows;
+                    vue.pagination.total = res.data.total;
+                })
+            },
+            // 查询
+            query() {
+                this.pagination.currentPage = 1;
+                this.findPage();
+            },
+            // 重置表单
+            resetForm() {
+                vue.formData = {};
+            },
+            // 弹出添加窗口
+            add() {
+                vue.flagAdd = true;
+                vue.resetForm();
+            },
+            //添加
+            submitAdd() {
+                vue.$refs['dataAddForm'].validate(flag => {
+                    if (flag) {
+                        console.log(vue.formData);
+                        axios.post("/personnel-1/add.do", vue.formData).then(res => {
+                            if (res.data.flag) {
+                                this.pagination.currentPage = 1;
+                                vue.findPage();
+                                // 弹出提示信息
+                                vue.$message({
+                                    message: res.data.message,
+                                    type: 'success'
+                                })
+                            } else {
+                                // 弹出失败提示信息
+                                vue.$message.error({
+                                    message: res.data.message
+                                })
+                            }
+                            // 关闭添加窗口
+                            vue.flagAdd = false;
+                        });
+                    } else {
+                        vue.$message.error({
+                            message: '数据校验失败,请重新输入!'
+                        })
+                        return false;
+                    }
+                })
+            },
+            // 弹出编辑窗口
+            handleUpdate(row) {
+                vue.flagEdit = true;
+                vue.resetForm();
+
+                axios.post("/personnel-1/showEdit.do?id=" + row.id).then(res => {
+                    if (res.data.flag) {
+                        vue.formData = res.data.data;
+                    } else {
+                        this.$message.error(res.data.message);
+                    }
+                })
+            },
+            //编辑
+            handleEdit() {
+                vue.$refs['dataEditForm'].validate(vali => {
+                    if (vali) {
+                        axios.post("/personnel-1/edit.do", vue.formData).then(res => {
+                            if (res.data.flag) {
+                                vue.$message({
+                                    type: 'success',
+                                    message: res.data.message
+                                })
+                            } else {
+                                this.$message.error(res.data.message);
+                            }
+                        }).finally(() => {
+                            vue.flagEdit = false;
+                            vue.pagination.currentPage = 1;
+                            this.findPage();
+                        })
+                    } else {
+                        vue.$message.error("表单校验失败!");
+                        return false;
+                    }
+                })
+            },
+            //切换页码
+            handleCurrentChange(currentPage) {
+                // 点击页码
+                this.pagination.currentPage = currentPage;
+                this.findPage();
+            },
+            // 删除
+            handleDelete(row) {
+                vue.$confirm("您确定删除当前数据吗?", "警告", {
+                    type: 'warning'
+                }).then(() => {
+                    axios.get("/personnel-1/delete.do?id=" + row.id).then(res => {
+                        if (res.data.flag) {
+                            vue.$message({
+                                type: 'success',
+                                message: res.data.message
+                            });
+                        } else {
+                            vue.$message.error(res.data.message)
+                        }
+                    }).finally(() => {
+                        vue.pagination.currentPage = 1;
+
+                        this.findPage();
+                    })
+                }).catch(() => {
+                    vue.$message({
+                        type: 'info',
+                        message: "操作已取消!"
+                    });
+                })
+            }
+        }
+    })
+</script>
+</html>
